@@ -29,7 +29,7 @@ async function start() {
 
   // listen to port after successful connection to db
   app.listen(3000, () => {
-    console.log("Auth Service Listening on port 3000!");
+    console.log("Auth Service Listening on port 3000");
   });
 }
 
