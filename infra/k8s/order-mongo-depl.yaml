@@ -1,0 +1,32 @@
+# order-mongo-depl.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-mongo-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-mongo
+  template:
+    metadata:
+      labels:
+        app: order-mongo
+    spec:
+      containers:
+        - name: order-mongo
+          image: mongo # offical docker img in docker hub by mongo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-mongo-srv
+spec:
+  type: ClusterIP
+  selector:
+    app: order-mongo
+  ports:
+    - name: order-mongo-db
+      protocol: TCP
+      port: 27017 # default port for mongo, read doc
+      targetPort: 27017

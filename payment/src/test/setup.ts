@@ -1,0 +1,81 @@
+import jwt from "jsonwebtoken";
+import { MongoMemoryServer } from "mongodb-memory-server";
+import mongoose from "mongoose";
+import { Order, OrderStatus } from "../model/order";
+let mongo: any;
+
+// mock nats-client
+jest.mock("../nats-client");
+
+// setup a common mongo memory server for all test
+beforeAll(async () => {
+  // clear mock
+  jest.clearAllMocks();
+  process.env.JWT_KEY = "asdf";
+  mongo = await MongoMemoryServer.create();
+  const mongoUri = mongo.getUri();
+
+  await mongoose.connect(mongoUri, {});
+});
+
+// delete data in mongo before each test
+beforeEach(async () => {
+  jest.clearAllMocks();
+  if (mongoose.connection.db) {
+    // Check if connected
+    const collections = await mongoose.connection.db.collections();
+    for (let collection of collections) {
+      await collection.deleteMany({});
+    }
+  } else {
+    throw new Error("Database connection is not established");
+  }
+});
+
+// clean up
+afterAll(async () => {
+  if (mongo) {
+    await mongo.stop();
+  }
+  await mongoose.connection.close();
+});
+
+export function signin(id: string = "test01") {
+  // build a jwt payload: {id, email}
+  const payload = { id: id, email: "test@test.com" };
+
+  // create jwt => jwt sign
+  const token = jwt.sign(payload, process.env.JWT_KEY!);
+
+  // build session obj: {jwt: <value>}
+  const session = { jwt: token };
+
+  // turn session obj into JSON
+  const sessionJSON = JSON.stringify(session);
+
+  // encode JSON into base64
+  const base64 = Buffer.from(sessionJSON).toString("base64");
+
+  // return a string: the cookie with encoded data
+  return [`session=${base64}`];
+}
+
+export async function createOrder(
+  id = "",
+  userId = "test01",
+  status = OrderStatus.Created
+) {
+  let fakeId = id;
+  if (!id || !id.length) {
+    fakeId = new mongoose.Types.ObjectId().toHexString();
+  }
+  const order = Order.build({
+    id: fakeId,
+    userId: userId,
+    status: status,
+    version: 0,
+    price: 100,
+  });
+  await order.save();
+  return order;
+}

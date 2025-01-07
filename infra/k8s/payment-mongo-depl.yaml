@@ -1,0 +1,32 @@
+# payment-mongo-depl.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-mongo-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-mongo
+  template:
+    metadata:
+      labels:
+        app: payment-mongo
+    spec:
+      containers:
+        - name: payment-mongo
+          image: mongo # offical docker img in docker hub by mongo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-mongo-srv
+spec:
+  type: ClusterIP
+  selector:
+    app: payment-mongo
+  ports:
+    - name: payment-mongo-db
+      protocol: TCP
+      port: 27017 # default port for mongo, read doc
+      targetPort: 27017
